@@ -4,45 +4,143 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TradingView Company Profile Widget</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 1rem;
+      font-family: sans-serif;
+      background: #f5f5f5;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    input, select, button {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.95rem;
+    }
+    button {
+      cursor: pointer;
+      background: #0077ff;
+      border: none;
+      color: white;
+      border-radius: 4px;
+    }
+    #widget {
+      background: white;
+      border-radius: 8px;
+      padding: 0.5rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;">
+<body>
+
+  <div class="controls">
+    <label>Ticker:</label>
+    <input type="text" id="symbol" placeholder="AAPL">
+
+    <label>Theme:</label>
+    <select id="theme">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+
+    <label>Height:</label>
+    <input type="number" id="height" style="width:80px;">
+
+    <label>Transparent:</label>
+    <select id="transparent">
+      <option value="false">No</option>
+      <option value="true">Yes</option>
+    </select>
+
+    <label>Locale:</label>
+    <select id="locale">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+      <option value="zh_CN">中文</option>
+      <option value="ja">日本語</option>
+    </select>
+
+    <button onclick="updateAndReload()">Go</button>
+  </div>
 
   <div id="widget"></div>
 
   <script>
-    // Get URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-
-    const symbol = urlParams.get("symbol") || "NASDAQ:AAPL";
-    const theme = urlParams.get("theme") || "light"; // light | dark
-    const height = urlParams.get("height") || "600";
-    const width = urlParams.get("width") || "100%";
-    const transparent = urlParams.get("transparent") === "true"; // true | false
-    const locale = urlParams.get("locale") || "en"; // en, es, de, fr, etc.
+    // Load settings from URL params
+    function getSettingsFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        symbol: params.get("symbol") || "NASDAQ:AAPL",
+        theme: params.get("theme") || "light",
+        height: params.get("height") || "600",
+        transparent: params.get("transparent") || "false",
+        locale: params.get("locale") || "en"
+      };
+    }
 
     // Render widget
-    const container = document.getElementById("widget");
-    container.innerHTML = `
-      <div class="tradingview-widget-container">
-        <div class="tradingview-widget-container__widget"></div>
-        <div class="tradingview-widget-copyright">
-          <a href="https://www.tradingview.com/symbols/${symbol.replace(':','-')}/" rel="noopener" target="_blank">
-            <span class="blue-text">${symbol} Profile</span>
-          </a>
-          by TradingView
+    function loadWidget(settings) {
+      // Update controls with current settings
+      document.getElementById("symbol").value = settings.symbol.replace("NASDAQ:", "");
+      document.getElementById("theme").value = settings.theme;
+      document.getElementById("height").value = settings.height;
+      document.getElementById("transparent").value = settings.transparent;
+      document.getElementById("locale").value = settings.locale;
+
+      // Widget HTML
+      const container = document.getElementById("widget");
+      container.innerHTML = `
+        <div class="tradingview-widget-container">
+          <div class="tradingview-widget-container__widget"></div>
+          <div class="tradingview-widget-copyright">
+            <a href="https://www.tradingview.com/symbols/${settings.symbol.replace(':','-')}/" rel="noopener" target="_blank">
+              <span class="blue-text">${settings.symbol} Profile</span>
+            </a> by TradingView
+          </div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-profile.js" async>
+          {
+            "symbol": "${settings.symbol}",
+            "width": "100%",
+            "height": "${settings.height}",
+            "colorTheme": "${settings.theme}",
+            "isTransparent": ${settings.transparent},
+            "locale": "${settings.locale}"
+          }
+          </script>
         </div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-profile.js" async>
-        {
-          "symbol": "${symbol}",
-          "width": "${width}",
-          "height": "${height}",
-          "colorTheme": "${theme}",
-          "isTransparent": ${transparent},
-          "locale": "${locale}"
-        }
-        </script>
-      </div>
-    `;
+      `;
+    }
+
+    // Update URL and reload widget
+    function updateAndReload() {
+      let symbol = document.getElementById("symbol").value.trim().toUpperCase();
+      if (!symbol.includes(":")) symbol = "NASDAQ:" + symbol;
+
+      const theme = document.getElementById("theme").value;
+      const height = document.getElementById("height").value || "600";
+      const transparent = document.getElementById("transparent").value;
+      const locale = document.getElementById("locale").value;
+
+      // Build new URL
+      const params = new URLSearchParams({
+        symbol, theme, height, transparent, locale
+      });
+      window.history.replaceState({}, "", "?" + params.toString());
+
+      loadWidget({ symbol, theme, height, transparent, locale });
+    }
+
+    // Initialize
+    const initialSettings = getSettingsFromUrl();
+    loadWidget(initialSettings);
   </script>
 
 </body>
