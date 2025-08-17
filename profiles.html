@@ -95,7 +95,6 @@
       document.getElementById("transparent").value = settings.transparent;
       document.getElementById("locale").value = settings.locale;
 
-      // Widget HTML
       const container = document.getElementById("widget");
       container.innerHTML = `
         <div class="tradingview-widget-container">
@@ -105,24 +104,30 @@
               <span class="blue-text">${settings.symbol} Profile</span>
             </a> by TradingView
           </div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-profile.js" async>
-          {
-            "symbol": "${settings.symbol}",
-            "width": "100%",
-            "height": "${settings.height}",
-            "colorTheme": "${settings.theme}",
-            "isTransparent": ${settings.transparent},
-            "locale": "${settings.locale}"
-          }
-          </script>
         </div>
       `;
+
+      // Dynamically add the TradingView widget script
+      const script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-profile.js";
+      script.async = true;
+      script.innerHTML = JSON.stringify({
+        symbol: settings.symbol,
+        width: "100%",
+        height: settings.height,
+        colorTheme: settings.theme,
+        isTransparent: settings.transparent === "true",
+        locale: settings.locale
+      });
+      // Append to the widget container
+      container.querySelector('.tradingview-widget-container').appendChild(script);
     }
 
     // Update URL and reload widget
     function updateAndReload() {
       let symbol = document.getElementById("symbol").value.trim().toUpperCase();
-      if (!symbol.includes(":")) symbol = "NASDAQ:" + symbol;
+      if (!symbol.includes(':')) symbol = "NASDAQ:" + symbol;
 
       const theme = document.getElementById("theme").value;
       const height = document.getElementById("height").value || "600";
